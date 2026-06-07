@@ -1,4 +1,4 @@
-[gym_tracker (1).html](https://github.com/user-attachments/files/28675232/gym_tracker.1.html)
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
