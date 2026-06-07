@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GymLog — Tu cuaderno de entrenos</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --ink-light: #4a4a6a;
+    --paper: #f5f0e8;
+    --paper-dark: #ede8dc;
+    --paper-darker: #ddd8cc;
+    --accent: #c84b31;
+    --accent-hover: #a33a22;
+    --accent-soft: rgba(200, 75, 49, 0.1);
+    --green: #2d6a4f;
+    --green-soft: rgba(45, 106, 79, 0.1);
+    --blue: #1d3557;
+    --blue-soft: rgba(29, 53, 87, 0.1);
+    --gold: #e8a020;
+    --line: rgba(26,26,46,0.12);
+    --sidebar-w: 260px;
+    --header-h: 60px;
+    --radius: 6px;
+    --font-display: 'DM Serif Display', serif;
+    --font-body: 'Syne', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 14px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: var(--header-h);
+    background: var(--ink);
+    display: flex; align-items: center; padding: 0 1.25rem;
+    z-index: 200;
+    border-bottom: 2px solid var(--accent);
+  }
+  header .logo {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    color: var(--paper);
+    letter-spacing: 0.02em;
+    flex: 1;
+  }
+  header .logo span { color: var(--accent); }
+  header .header-actions { display: flex; gap: 8px; align-items: center; }
+  header .header-actions button {
+    background: none; border: 1px solid rgba(245,240,232,0.2);
+    color: var(--paper); padding: 5px 12px;
+    border-radius: var(--radius); font-family: var(--font-body);
+    font-size: 12px; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; gap: 5px;
+  }
+  header .header-actions button:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── SIDEBAR ── */
+  #sidebar {
+    position: fixed;
+    top: var(--header-h); left: 0; bottom: 0;
+    width: var(--sidebar-w);
+    background: var(--paper-dark);
+    border-right: 1px solid var(--line);
+    overflow-y: auto;
+    z-index: 100;
+    padding: 0;
+  }
+  .sidebar-section-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--ink-light);
+    padding: 18px 16px 6px;
+  }
+  .month-btn {
+    width: 100%; text-align: left;
+    background: none; border: none; outline: none;
+    padding: 8px 16px; font-family: var(--font-body);
+    font-size: 13px; font-weight: 600;
+    color: var(--ink); cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .month-btn:hover { background: var(--paper-darker); }
+  .month-btn.active { border-left-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+  .month-btn .ti { font-size: 14px; transition: transform 0.2s; }
+  .month-btn.active .ti { transform: rotate(90deg); }
+
+  .week-list { display: none; }
+  .week-list.open { display: block; }
+  .week-btn {
+    width: 100%; text-align: left;
+    background: none; border: none; outline: none;
+    padding: 6px 16px 6px 28px;
+    font-family: var(--font-body); font-size: 12px;
+    color: var(--ink-light); cursor: pointer;
+    border-left: 3px solid transparent;
+    display: flex; align-items: center; justify-content: space-between;
+    transition: all 0.15s;
+  }
+  .week-btn:hover { background: var(--paper-darker); color: var(--ink); }
+  .week-btn.active { border-left-color: var(--gold); color: var(--blue); font-weight: 600; }
+
+  .day-list { display: none; }
+  .day-list.open { display: block; }
+  .day-btn {
+    width: 100%; text-align: left;
+    background: none; border: none; outline: none;
+    padding: 5px 16px 5px 42px;
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--ink-light); cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: all 0.15s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .day-btn:hover { background: var(--paper-darker); color: var(--ink); }
+  .day-btn.active { border-left-color: var(--green); color: var(--green); font-weight: 500; }
+  .day-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--line); flex-shrink: 0; }
+  .day-btn.has-data .day-dot { background: var(--green); }
+
+  /* ── MAIN CONTENT ── */
+  #main {
+    margin-left: var(--sidebar-w);
+    margin-top: var(--header-h);
+    min-height: calc(100vh - var(--header-h));
+    padding: 0;
+  }
+
+  /* ── NOTEBOOK PAGE ── */
+  .notebook-page {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem;
+  }
+  .page-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--ink);
+  }
+  .page-title {
+    font-family: var(--font-display);
+    font-size: 2rem; color: var(--ink);
+    margin: 0; line-height: 1.1;
+  }
+  .page-date-badge {
+    font-family: var(--font-mono); font-size: 11px;
+    background: var(--ink); color: var(--paper);
+    padding: 4px 10px; border-radius: var(--radius);
+    margin-top: 4px;
+  }
+
+  /* ── SECTION CARDS ── */
+  .section-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+  .section-header {
+    background: var(--paper-darker);
+    padding: 10px 16px;
+    display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .section-icon {
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 4px; font-size: 15px;
+  }
+  .section-icon.workout { background: var(--accent-soft); color: var(--accent); }
+  .section-icon.nutrition { background: var(--green-soft); color: var(--green); }
+  .section-icon.routine { background: var(--blue-soft); color: var(--blue); }
+  .section-title {
+    font-size: 13px; font-weight: 700; letter-spacing: 0.05em;
+    text-transform: uppercase; color: var(--ink);
+    margin: 0;
+  }
+  .section-body { padding: 14px 16px; }
+
+  /* ── TABLES ── */
+  .notebook-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .notebook-table th {
+    text-align: left; font-size: 10px; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink-light); padding: 0 8px 8px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .notebook-table td { padding: 7px 8px 7px 0; border-bottom: 1px solid rgba(26,26,46,0.05); vertical-align: middle; }
+  .notebook-table tr:last-child td { border-bottom: none; }
+  .notebook-table input[type="text"],
+  .notebook-table input[type="number"] {
+    width: 100%; background: transparent;
+    border: none; border-bottom: 1.5px solid var(--line);
+    padding: 2px 4px; font-family: var(--font-mono);
+    font-size: 12px; color: var(--ink); outline: none;
+    transition: border-color 0.2s;
+  }
+  .notebook-table input:focus { border-bottom-color: var(--accent); }
+
+  /* ── ADD ROW BTN ── */
+  .add-row-btn {
+    display: flex; align-items: center; gap: 5px;
+    background: none; border: 1px dashed var(--line);
+    padding: 5px 10px; border-radius: var(--radius);
+    font-family: var(--font-body); font-size: 12px;
+    color: var(--ink-light); cursor: pointer;
+    margin-top: 10px; transition: all 0.15s;
+  }
+  .add-row-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .add-row-btn .ti { font-size: 14px; }
+
+  /* ── AI CALORIE INPUT ── */
+  .ai-input-wrapper {
+    position: relative;
+    display: flex; gap: 8px; align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .ai-meal-input {
+    flex: 1; min-width: 180px;
+    border: 1.5px solid var(--line);
+    border-radius: var(--radius);
+    padding: 7px 10px;
+    font-family: var(--font-body); font-size: 13px;
+    color: var(--ink); background: var(--paper);
+    outline: none; transition: border-color 0.2s;
+  }
+  .ai-meal-input:focus { border-color: var(--green); }
+
+  .ai-submit-btn {
+    background: var(--green); color: #fff;
+    border: none; border-radius: var(--radius);
+    padding: 7px 13px; font-family: var(--font-body);
+    font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: background 0.2s;
+    display: flex; align-items: center; gap: 5px;
+    white-space: nowrap;
+  }
+  .ai-submit-btn:hover { background: #1e5038; }
+  .ai-submit-btn:disabled { background: var(--ink-light); cursor: not-allowed; }
+  .ai-submit-btn .ti { font-size: 14px; }
+
+  .kcal-result-field {
+    border: 1.5px solid var(--green);
+    background: var(--green-soft);
+    border-radius: var(--radius);
+    padding: 7px 10px;
+    font-family: var(--font-mono); font-size: 13px;
+    color: var(--green); font-weight: 500;
+    min-width: 90px; text-align: center;
+  }
+
+  .ai-status {
+    width: 100%; font-size: 11px;
+    color: var(--ink-light); font-style: italic;
+    display: flex; align-items: center; gap: 5px;
+    min-height: 18px;
+  }
+  .ai-status .spinner {
+    width: 12px; height: 12px; border: 2px solid var(--line);
+    border-top-color: var(--green); border-radius: 50%;
+    animation: spin 0.7s linear infinite; flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── NUTRITION ROWS ── */
+  .nutrition-row {
+    display: grid;
+    grid-template-columns: 1fr auto 90px 32px;
+    gap: 8px; align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(26,26,46,0.05);
+  }
+  .nutrition-row:last-child { border-bottom: none; }
+  .nutrition-row-inner {
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .kcal-badge {
+    font-family: var(--font-mono); font-size: 12px;
+    font-weight: 500; color: var(--green);
+    background: var(--green-soft);
+    padding: 3px 8px; border-radius: 99px;
+    white-space: nowrap;
+  }
+  .kcal-empty { color: var(--ink-light); }
+  .delete-row-btn {
+    background: none; border: none;
+    color: var(--ink-light); cursor: pointer;
+    padding: 4px; font-size: 15px;
+    border-radius: 4px; transition: all 0.15s;
+  }
+  .delete-row-btn:hover { color: var(--accent); background: var(--accent-soft); }
+
+  /* ── TOTAL BAR ── */
+  .total-bar {
+    display: flex; align-items: center; justify-content: flex-end;
+    gap: 10px; padding: 10px 0 0;
+    border-top: 1px solid var(--line);
+    margin-top: 10px;
+  }
+  .total-label { font-size: 12px; font-weight: 600; color: var(--ink-light); text-transform: uppercase; letter-spacing: 0.08em; }
+  .total-value { font-family: var(--font-mono); font-size: 16px; font-weight: 500; color: var(--green); }
+
+  /* ── ROUTINE SECTION ── */
+  .routine-textarea {
+    width: 100%; border: 1.5px solid var(--line);
+    border-radius: var(--radius); padding: 10px 12px;
+    font-family: var(--font-mono); font-size: 12px;
+    line-height: 1.7; color: var(--ink);
+    background: var(--paper); resize: vertical;
+    min-height: 90px; outline: none;
+    transition: border-color 0.2s;
+  }
+  .routine-textarea:focus { border-color: var(--blue); }
+
+  /* ── NOTES ── */
+  .notes-textarea {
+    width: 100%;
+    border: none; border-bottom: 1px solid var(--line);
+    padding: 6px 2px; font-family: var(--font-display);
+    font-size: 15px; color: var(--ink);
+    background: transparent; resize: none;
+    min-height: 60px; outline: none; line-height: 1.7;
+    font-style: italic;
+  }
+  .notes-textarea::placeholder { color: var(--ink-light); opacity: 0.5; }
+
+  /* ── SAVE BTN ── */
+  .save-btn {
+    background: var(--accent); color: #fff;
+    border: none; border-radius: var(--radius);
+    padding: 9px 20px; font-family: var(--font-body);
+    font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: background 0.2s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .save-btn:hover { background: var(--accent-hover); }
+  .save-btn .ti { font-size: 16px; }
+
+  /* ── WELCOME SCREEN ── */
+  #welcome {
+    max-width: 560px; margin: 4rem auto;
+    text-align: center; padding: 2rem;
+  }
+  #welcome .welcome-icon {
+    font-size: 3rem; color: var(--accent);
+    margin-bottom: 1rem;
+  }
+  #welcome h1 {
+    font-family: var(--font-display);
+    font-size: 2.2rem; color: var(--ink);
+    margin-bottom: 0.5rem;
+  }
+  #welcome p { color: var(--ink-light); font-size: 14px; line-height: 1.7; margin-bottom: 1.5rem; }
+  .welcome-quick-btns { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .welcome-quick-btn {
+    background: none; border: 1px solid var(--line);
+    padding: 7px 14px; border-radius: var(--radius);
+    font-family: var(--font-body); font-size: 12px;
+    color: var(--ink); cursor: pointer; transition: all 0.15s;
+  }
+  .welcome-quick-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed; bottom: 20px; right: 20px;
+    background: var(--ink); color: var(--paper);
+    padding: 10px 16px; border-radius: var(--radius);
+    font-size: 13px; font-family: var(--font-body);
+    display: flex; align-items: center; gap: 8px;
+    z-index: 9999; transform: translateY(80px);
+    transition: transform 0.3s ease; pointer-events: none;
+  }
+  #toast.show { transform: translateY(0); }
+  #toast .ti { color: var(--green); font-size: 16px; }
+
+  /* ── SCROLLBAR ── */
+  #sidebar::-webkit-scrollbar { width: 4px; }
+  #sidebar::-webkit-scrollbar-track { background: transparent; }
+  #sidebar::-webkit-scrollbar-thumb { background: var(--line); border-radius: 99px; }
+
+  /* ── SPINNER OVERLAY ── */
+  .ai-spinner-row { display: none; }
+
+  @media (max-width: 640px) {
+    :root { --sidebar-w: 0px; }
+    #sidebar { display: none; }
+    .notebook-page { padding: 1.5rem 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">Gym<span>Log</span></div>
+  <div class="header-actions">
+    <button id="newDayBtn"><i class="ti ti-plus"></i> Nueva entrada</button>
+    <button id="toggleSidebarBtn"><i class="ti ti-layout-sidebar"></i></button>
+  </div>
+</header>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="sidebar-section-label">Mis registros</div>
+  <div id="monthTree"></div>
+  <div style="height: 20px;"></div>
+</nav>
+
+<!-- MAIN -->
+<main id="main">
+  <div id="welcomeScreen">
+    <div id="welcome">
+      <div class="welcome-icon"><i class="ti ti-notebook"></i></div>
+      <h1>Tu diario de entrenos</h1>
+      <p>Seleccioná un día del panel izquierdo o creá una nueva entrada para registrar tus series, comidas y rutinas.</p>
+      <div class="welcome-quick-btns">
+        <button class="welcome-quick-btn" onclick="createTodayEntry()"><i class="ti ti-calendar-today"></i> Entrada de hoy</button>
+        <button class="welcome-quick-btn" onclick="focusMonth('Junio')"><i class="ti ti-calendar"></i> Ver Junio 2025</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="dayEditor" style="display:none;">
+    <div class="notebook-page">
+      <!-- PAGE HEADER -->
+      <div class="page-header">
+        <div>
+          <h1 class="page-title" id="editorTitle">Lunes, 3 de Junio</h1>
+          <div class="page-date-badge" id="editorDateBadge">2025</div>
+        </div>
+        <button class="save-btn" onclick="saveCurrentEntry()">
+          <i class="ti ti-device-floppy"></i> Guardar
+        </button>
+      </div>
+
+      <!-- WORKOUT SECTION -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-icon workout"><i class="ti ti-barbell"></i></div>
+          <span class="section-title">Series y pesos</span>
+          <span style="margin-left:auto; font-size:11px; color:var(--ink-light);">Ejercicio · Series · Reps · Kg</span>
+        </div>
+        <div class="section-body">
+          <table class="notebook-table" id="workoutTable">
+            <thead>
+              <tr>
+                <th style="width:35%">Ejercicio</th>
+                <th style="width:12%">Series</th>
+                <th style="width:12%">Reps</th>
+                <th style="width:15%">Peso (kg)</th>
+                <th style="width:18%">Notas</th>
+                <th style="width:8%"></th>
+              </tr>
+            </thead>
+            <tbody id="workoutBody"></tbody>
+          </table>
+          <button class="add-row-btn" onclick="addWorkoutRow()">
+            <i class="ti ti-plus"></i> Agregar ejercicio
+          </button>
+        </div>
+      </div>
+
+      <!-- NUTRITION SECTION -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-icon nutrition"><i class="ti ti-apple"></i></div>
+          <span class="section-title">Comidas & Calorías (kcal)</span>
+          <span style="margin-left:auto;">
+            <span style="font-size:10px; color:var(--green); font-weight:600; letter-spacing:0.05em; text-transform:uppercase;">
+              <i class="ti ti-cpu" style="font-size:12px;"></i> IA activa
+            </span>
+          </span>
+        </div>
+        <div class="section-body">
+          <div id="nutritionRows"></div>
+          <button class="add-row-btn" onclick="addNutritionRow()">
+            <i class="ti ti-plus"></i> Agregar comida
+          </button>
+          <div class="total-bar">
+            <span class="total-label">Total del día</span>
+            <span class="total-value" id="totalKcal">0 kcal</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROUTINE SECTION -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-icon routine"><i class="ti ti-list-check"></i></div>
+          <span class="section-title">Rutina del día</span>
+        </div>
+        <div class="section-body">
+          <textarea class="routine-textarea" id="routineText" placeholder="Ej: Día de pecho y tríceps&#10;- Press banca 4x8&#10;- Fondos 3x12&#10;- Extensiones tríceps 4x15"></textarea>
+        </div>
+      </div>
+
+      <!-- NOTES SECTION -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-icon" style="background:rgba(232,160,32,0.15); color:var(--gold);"><i class="ti ti-notes"></i></div>
+          <span class="section-title">Observaciones del día</span>
+        </div>
+        <div class="section-body">
+          <textarea class="notes-textarea" id="notesText" rows="3" placeholder="¿Cómo te sentiste? ¿Alguna lesión o PR?"></textarea>
+        </div>
+      </div>
+
+      <div style="text-align:right; margin-top:0.5rem;">
+        <button class="save-btn" onclick="saveCurrentEntry()">
+          <i class="ti ti-device-floppy"></i> Guardar entrada
+        </button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- TOAST -->
+<div id="toast"><i class="ti ti-check"></i> <span id="toastMsg">Guardado</span></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ── DATA STORE ──────────────────────────────────────────────────────────────
+const STORAGE_KEY = 'gymlog_data_v2';
+let store = {};
+try { store = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) { store = {}; }
+
+const months2025 = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const monthDays = [31,28,31,30,31,30,31,31,30,31,30,31];
+const dayNames = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const dayNamesFull = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+
+let currentDayKey = null;
+
+// ── SIDEBAR TREE ──────────────────────────────────────────────────────────
+function getWeeksForMonth(monthIdx) {
+  const year = 2025;
+  const firstDay = new Date(year, monthIdx, 1).getDay();
+  const days = monthDays[monthIdx];
+  const weeks = [];
+  let weekStart = 1 - firstDay;
+  let wNum = 1;
+  while (weekStart <= days) {
+    const s = Math.max(weekStart, 1);
+    const e = Math.min(weekStart + 6, days);
+    if (s <= days) weeks.push({ num: wNum, start: s, end: e });
+    weekStart += 7; wNum++;
+  }
+  return weeks;
+}
+
+function renderSidebar() {
+  const container = document.getElementById('monthTree');
+  container.innerHTML = '';
+  months2025.forEach((month, mIdx) => {
+    const hasData = Object.keys(store).some(k => k.startsWith(`2025-${String(mIdx+1).padStart(2,'0')}`));
+    const mDiv = document.createElement('div');
+    const mBtn = document.createElement('button');
+    mBtn.className = 'month-btn';
+    mBtn.dataset.month = mIdx;
+    mBtn.innerHTML = `<span>${month} 2025</span><i class="ti ti-chevron-right"></i>`;
+    if (hasData) mBtn.style.color = 'var(--blue)';
+
+    const weekList = document.createElement('div');
+    weekList.className = 'week-list';
+    weekList.id = `weeks-${mIdx}`;
+
+    const weeks = getWeeksForMonth(mIdx);
+    weeks.forEach(week => {
+      const wDiv = document.createElement('div');
+      const wBtn = document.createElement('button');
+      wBtn.className = 'week-btn';
+      wBtn.dataset.month = mIdx;
+      wBtn.dataset.week = week.num;
+      wBtn.textContent = `Semana ${week.num}  (${week.start}–${week.end})`;
+
+      const dayList = document.createElement('div');
+      dayList.className = 'day-list';
+      dayList.id = `days-${mIdx}-${week.num}`;
+
+      for (let d = week.start; d <= week.end; d++) {
+        const date = new Date(2025, mIdx, d);
+        const key = `2025-${String(mIdx+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const dBtn = document.createElement('button');
+        dBtn.className = 'day-btn' + (store[key] ? ' has-data' : '');
+        dBtn.dataset.key = key;
+        dBtn.innerHTML = `<span class="day-dot"></span>${dayNames[date.getDay()]} ${d}`;
+        dBtn.addEventListener('click', () => loadDay(key, mIdx, d));
+        dayList.appendChild(dBtn);
+      }
+
+      wBtn.addEventListener('click', () => {
+        const isOpen = dayList.classList.contains('open');
+        document.querySelectorAll('.day-list.open').forEach(el => { if(el !== dayList) el.classList.remove('open'); });
+        document.querySelectorAll('.week-btn.active').forEach(el => { if(el !== wBtn) el.classList.remove('active'); });
+        dayList.classList.toggle('open', !isOpen);
+        wBtn.classList.toggle('active', !isOpen);
+      });
+
+      wDiv.appendChild(wBtn);
+      wDiv.appendChild(dayList);
+      weekList.appendChild(wDiv);
+    });
+
+    mBtn.addEventListener('click', () => {
+      const isOpen = weekList.classList.contains('open');
+      document.querySelectorAll('.week-list.open').forEach(el => { if(el !== weekList) el.classList.remove('open'); });
+      document.querySelectorAll('.month-btn.active').forEach(el => { if(el !== mBtn) el.classList.remove('active'); });
+      weekList.classList.toggle('open', !isOpen);
+      mBtn.classList.toggle('active', !isOpen);
+    });
+
+    mDiv.appendChild(mBtn);
+    mDiv.appendChild(weekList);
+    container.appendChild(mDiv);
+  });
+}
+
+// ── LOAD DAY ──────────────────────────────────────────────────────────────
+function loadDay(key, mIdx, dayNum) {
+  currentDayKey = key;
+  document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.querySelector(`.day-btn[data-key="${key}"]`);
+  if (btn) btn.classList.add('active');
+
+  const date = new Date(2025, mIdx, dayNum);
+  document.getElementById('editorTitle').textContent = `${dayNamesFull[date.getDay()]}, ${dayNum} de ${months2025[mIdx]}`;
+  document.getElementById('editorDateBadge').textContent = `2025`;
+
+  const entry = store[key] || { workout: [], nutrition: [], routine: '', notes: '' };
+
+  // workout
+  document.getElementById('workoutBody').innerHTML = '';
+  const ws = entry.workout && entry.workout.length ? entry.workout : [{}];
+  ws.forEach(row => addWorkoutRow(row));
+
+  // nutrition
+  document.getElementById('nutritionRows').innerHTML = '';
+  const ns = entry.nutrition && entry.nutrition.length ? entry.nutrition : [{}];
+  ns.forEach(row => addNutritionRow(row));
+
+  document.getElementById('routineText').value = entry.routine || '';
+  document.getElementById('notesText').value = entry.notes || '';
+
+  updateTotalKcal();
+
+  document.getElementById('welcomeScreen').style.display = 'none';
+  document.getElementById('dayEditor').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── WORKOUT ROW ────────────────────────────────────────────────────────────
+function addWorkoutRow(data = {}) {
+  const tbody = document.getElementById('workoutBody');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="text" placeholder="Press banca" value="${data.exercise || ''}"></td>
+    <td><input type="number" placeholder="4" min="1" value="${data.sets || ''}"></td>
+    <td><input type="number" placeholder="8" min="1" value="${data.reps || ''}"></td>
+    <td><input type="number" placeholder="0" min="0" step="0.5" value="${data.weight || ''}"></td>
+    <td><input type="text" placeholder="Notas..." value="${data.notes || ''}"></td>
+    <td><button class="delete-row-btn" onclick="this.closest('tr').remove()"><i class="ti ti-trash"></i></button></td>
+  `;
+  tbody.appendChild(tr);
+}
+
+// ── NUTRITION ROW ──────────────────────────────────────────────────────────
+let rowCounter = 0;
+function addNutritionRow(data = {}) {
+  const container = document.getElementById('nutritionRows');
+  const id = ++rowCounter;
+  const div = document.createElement('div');
+  div.className = 'nutrition-row';
+  div.dataset.id = id;
+
+  const kcalVal = data.kcal || '';
+  const kcalDisplay = kcalVal ? `${kcalVal} kcal` : '–';
+  const kcalClass = kcalVal ? 'kcal-badge' : 'kcal-badge kcal-empty';
+
+  div.innerHTML = `
+    <div class="nutrition-row-inner">
+      <div class="ai-input-wrapper">
+        <input class="ai-meal-input" type="text" placeholder='Ej: "2 huevos y tostada"' value="${data.meal || ''}"
+          data-id="${id}" onblur="if(this.value.trim()) estimateKcal(${id})">
+        <button class="ai-submit-btn" onclick="estimateKcal(${id})" title="Estimar con IA">
+          <i class="ti ti-sparkles"></i> IA
+        </button>
+      </div>
+      <div class="ai-status" id="status-${id}"></div>
+    </div>
+    <span class="${kcalClass}" id="kcal-badge-${id}">${kcalDisplay}</span>
+    <input type="number" class="kcal-result-field" id="kcal-${id}" placeholder="kcal"
+      value="${kcalVal}" min="0" step="1" onchange="updateTotalKcal()" style="display:${kcalVal ? 'block' : 'none'}">
+    <button class="delete-row-btn" onclick="removeNutritionRow(this)"><i class="ti ti-trash"></i></button>
+  `;
+  container.appendChild(div);
+  if (kcalVal) updateTotalKcal();
+}
+
+function removeNutritionRow(btn) {
+  btn.closest('.nutrition-row').remove();
+  updateTotalKcal();
+}
+
+function updateTotalKcal() {
+  let total = 0;
+  document.querySelectorAll('[id^="kcal-"]').forEach(el => {
+    const v = parseFloat(el.value);
+    if (!isNaN(v)) total += v;
+  });
+  document.getElementById('totalKcal').textContent = `${Math.round(total)} kcal`;
+}
+
+// ── AI CALORIE ESTIMATION ──────────────────────────────────────────────────
+async function estimateKcal(rowId) {
+  const input = document.querySelector(`.ai-meal-input[data-id="${rowId}"]`);
+  const status = document.getElementById(`status-${rowId}`);
+  const kcalField = document.getElementById(`kcal-${rowId}`);
+  const kcalBadge = document.getElementById(`kcal-badge-${rowId}`);
+  const btn = input.parentElement.querySelector('.ai-submit-btn');
+
+  const meal = input.value.trim();
+  if (!meal) return;
+
+  btn.disabled = true;
+  status.innerHTML = `<div class="spinner"></div> Consultando IA nutricional…`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: `Sos un nutricionista experto. Cuando el usuario describa una comida o alimento, respondé ÚNICAMENTE con un objeto JSON con este formato exacto (sin texto adicional, sin backticks):
+{"kcal": <número entero de calorías estimadas>, "breakdown": "<breve descripción de cómo llegaste al valor>", "confidence": "<alta|media|baja>"}
+
+Usá valores promedio de bases de datos nutricionales estándar (USDA, FAO). Si no podés determinar la cantidad, asumí una porción estándar. Sé preciso pero conservador.`,
+        messages: [{
+          role: 'user',
+          content: `Estimá las calorías de: "${meal}"`
+        }]
+      })
+    });
+
+    const data = await response.json();
+    const text = data.content?.[0]?.text || '';
+
+    let result;
+    try {
+      const clean = text.replace(/```json|```/g, '').trim();
+      result = JSON.parse(clean);
+    } catch(e) {
+      const match = text.match(/\d+/);
+      result = { kcal: match ? parseInt(match[0]) : null, breakdown: 'Estimación IA', confidence: 'media' };
+    }
+
+    if (result && result.kcal !== null && !isNaN(result.kcal)) {
+      kcalField.value = Math.round(result.kcal);
+      kcalField.style.display = 'block';
+
+      kcalBadge.className = 'kcal-badge';
+      kcalBadge.textContent = `${Math.round(result.kcal)} kcal`;
+
+      const confColor = result.confidence === 'alta' ? 'var(--green)' : result.confidence === 'media' ? 'var(--gold)' : 'var(--accent)';
+      status.innerHTML = `<i class="ti ti-info-circle" style="font-size:12px; color:${confColor}"></i>
+        <span style="color:${confColor};">Confianza ${result.confidence}</span>
+        <span style="margin-left:4px; opacity:0.6;">· ${result.breakdown}</span>`;
+      updateTotalKcal();
+    } else {
+      status.innerHTML = `<i class="ti ti-alert-triangle" style="font-size:12px; color:var(--accent)"></i> No se pudo estimar. Ingresá el valor manualmente.`;
+      kcalField.style.display = 'block';
+    }
+  } catch(err) {
+    status.innerHTML = `<i class="ti ti-alert-triangle" style="font-size:12px; color:var(--accent)"></i> Error de conexión. Ingresá el valor manualmente.`;
+    kcalField.style.display = 'block';
+    console.error('AI error:', err);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── SAVE ENTRY ─────────────────────────────────────────────────────────────
+function saveCurrentEntry() {
+  if (!currentDayKey) return;
+
+  const workout = [];
+  document.querySelectorAll('#workoutBody tr').forEach(tr => {
+    const inputs = tr.querySelectorAll('input');
+    workout.push({
+      exercise: inputs[0].value,
+      sets: inputs[1].value,
+      reps: inputs[2].value,
+      weight: inputs[3].value,
+      notes: inputs[4].value
+    });
+  });
+
+  const nutrition = [];
+  document.querySelectorAll('.nutrition-row').forEach(row => {
+    const id = row.dataset.id;
+    const mealInput = row.querySelector('.ai-meal-input');
+    const kcalInput = document.getElementById(`kcal-${id}`);
+    nutrition.push({
+      meal: mealInput ? mealInput.value : '',
+      kcal: kcalInput ? kcalInput.value : ''
+    });
+  });
+
+  store[currentDayKey] = {
+    workout,
+    nutrition,
+    routine: document.getElementById('routineText').value,
+    notes: document.getElementById('notesText').value
+  };
+
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(store)); } catch(e) {}
+  renderSidebar();
+  showToast('Entrada guardada correctamente');
+
+  // update sidebar dot
+  const btn = document.querySelector(`.day-btn[data-key="${currentDayKey}"]`);
+  if (btn) { btn.classList.add('has-data'); btn.querySelector('.day-dot').style.background = 'var(--green)'; }
+}
+
+// ── TOAST ──────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+// ── HELPERS ────────────────────────────────────────────────────────────────
+function createTodayEntry() {
+  const now = new Date();
+  const mIdx = now.getMonth();
+  const d = now.getDate();
+  const key = `${now.getFullYear()}-${String(mIdx+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+
+  // Open month/week in sidebar
+  const monthBtn = document.querySelector(`.month-btn[data-month="${mIdx}"]`);
+  if (monthBtn) {
+    monthBtn.click();
+    setTimeout(() => {
+      const weeks = getWeeksForMonth(mIdx);
+      const week = weeks.find(w => w.start <= d && w.end >= d);
+      if (week) {
+        const wBtn = document.querySelector(`.week-btn[data-month="${mIdx}"][data-week="${week.num}"]`);
+        if (wBtn) { wBtn.click(); setTimeout(() => loadDay(key, mIdx, d), 100); }
+      } else { loadDay(key, mIdx, d); }
+    }, 100);
+  } else { loadDay(key, mIdx, d); }
+}
+
+function focusMonth(name) {
+  const idx = months2025.indexOf(name);
+  if (idx < 0) return;
+  const btn = document.querySelector(`.month-btn[data-month="${idx}"]`);
+  if (btn) btn.click();
+}
+
+document.getElementById('newDayBtn').addEventListener('click', createTodayEntry);
+document.getElementById('toggleSidebarBtn').addEventListener('click', () => {
+  const sb = document.getElementById('sidebar');
+  const main = document.getElementById('main');
+  const isHidden = sb.style.display === 'none';
+  sb.style.display = isHidden ? 'block' : 'none';
+  main.style.marginLeft = isHidden ? 'var(--sidebar-w)' : '0';
+});
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+renderSidebar();
+</script>
+</body>
+</html>
